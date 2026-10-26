@@ -191,7 +191,10 @@ def main():
         return 1
 
     # 新抓的在前，保证去重时优先保留新数据
-    items = core.dedupe(fetched + prev)
+    # 先规整再合并：磁力格式修正、dmhy 分类过滤都要覆盖到历史条目，
+    # 否则旧数据会把 already fixed 的问题重新带回订阅里。
+    items = core.normalize_items(fetched + prev)
+    items = core.dedupe(items)
     items = prune(items)
     items.sort(key=core.ts_of, reverse=True)
 

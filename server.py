@@ -434,8 +434,38 @@ def _parse_filters(params):
     return include, exclude, cats, keyword, max(1, min(limit, 500))
 
 
+def normalize_items(items, params=None):
+    """把条目规整成对外输出的最终形态。
+
+    必须在「新抓的 + 历史读回的」合并之后统一执行一次。
+    否则改了规则只对新数据生效，历史条目要等过了保留期才干净——
+    实际踩过：磁力规整和分类过滤都只写在解析层，导致旧的 base32 磁力
+    和非动漫条目在订阅里又存活了一周。
+    """
+    params = params or {}
+    if str(params.get("dmhy_all") or "") in ("1", "true", "yes"):
+        allow = None
+    elif (params.get("dmhy_cat") or "").strip():
+        allow = {x.strip() for x in params["dmhy_cat"].split(",") if x.strip()}
+    elif (params.get("cat") or "").strip():
+        allow = None          # 调用方显式指定了分类，交给上层
+    else:
+        allow = S.DMHY_ANIME_CATS
+
+    out = []
+    for it in items:
+        if it.get("source") == "dmhy" and allow is not None:
+            cat = (it.get("category") or "").strip()
+            if cat and cat not in allow:
+                continue
+        it["magnet"] = slim_magnet(it.get("magnet") or "", it.get("title") or "")
+        out.append(it)
+    return out
+
+
 def prepare_items(items, params):
-    """过滤 -> 去重 -> 按时间倒序 -> 截断"""
+    """规整 -> 过滤 -> 去重 -> 按时间倒序 -> 截断"""
+    items = normalize_items(items, params)
     include, exclude, cats, keyword, limit = _parse_filters(params)
     items = [it for it in items if keep_item(it, include, exclude, cats, keyword)]
     items = dedupe(items)
