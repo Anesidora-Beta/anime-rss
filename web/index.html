@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>动漫资源 · 增强订阅</title>
+<style>
+  :root{
+    --bg:#f6f8fa; --card:#ffffff; --border:#d8dee4; --border-soft:#eaeef2;
+    --text:#1f2328; --muted:#656d76; --faint:#8b949e;
+    --accent:#0969da; --accent-soft:#ddf4ff; --accent-line:#54aeff;
+    --ok:#1a7f37; --ok-soft:#dafbe1; --bad:#cf222e; --bad-soft:#ffebe9;
+    --warn-soft:#fff8c5; --radius:14px;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",
+         "PingFang SC","Microsoft YaHei",sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:900px;margin:0 auto;padding:34px 20px 60px}
+  header h1{font-size:24px;margin:0 0 6px;letter-spacing:-.3px}
+  header p{margin:0;color:var(--muted);font-size:13.5px}
+  .card{
+    background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
+    padding:20px; margin-top:18px;
+  }
+  .card h2{font-size:14px;margin:0 0 12px;color:var(--muted);font-weight:600;
+    text-transform:none;letter-spacing:.2px}
+  code,kbd{font-family:ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace}
+  .sub{display:flex;gap:8px;align-items:stretch;flex-wrap:wrap}
+  .sub input{
+    flex:1 1 320px;min-width:0;padding:10px 12px;font-size:13px;
+    border:1px solid var(--border);border-radius:9px;background:var(--bg);
+    color:var(--text);font-family:ui-monospace,Consolas,monospace;
+  }
+  .sub input:focus{outline:2px solid var(--accent-line);outline-offset:-1px;background:#fff}
+  button{
+    font:inherit;font-size:13px;padding:10px 15px;border-radius:9px;cursor:pointer;
+    border:1px solid var(--border);background:#f6f8fa;color:var(--text);
+    transition:.15s; white-space:nowrap;
+  }
+  button:hover{background:#eef1f4}
+  button.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+  button.primary:hover{background:#0757ba}
+  button.copied{background:var(--ok);border-color:var(--ok);color:#fff}
+  .hint{color:var(--faint);font-size:12.5px;margin:10px 0 0}
+  .badges{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}
+  .badge{
+    font-size:12px;padding:3px 9px;border-radius:999px;border:1px solid var(--border-soft);
+    background:var(--bg);color:var(--muted);
+  }
+  .badge.ok{background:var(--ok-soft);border-color:#aceebb;color:var(--ok)}
+  .badge.bad{background:var(--bad-soft);border-color:#ffcecb;color:var(--bad)}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{text-align:left;color:var(--faint);font-weight:600;font-size:12px;
+     padding:0 0 8px;border-bottom:1px solid var(--border-soft)}
+  td{padding:9px 0;border-bottom:1px solid var(--border-soft);vertical-align:middle}
+  tr:last-child td{border-bottom:0}
+  td.n{text-align:right;color:var(--faint);white-space:nowrap;font-variant-numeric:tabular-nums}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+  .toolbar{display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
+  .toolbar input{
+    flex:1 1 220px;padding:9px 12px;border:1px solid var(--border);border-radius:9px;
+    font-size:13.5px;background:var(--bg);color:var(--text);
+  }
+  .toolbar input:focus{outline:2px solid var(--accent-line);outline-offset:-1px;background:#fff}
+  .count{color:var(--faint);font-size:12.5px;white-space:nowrap}
+  .item{padding:14px 0;border-bottom:1px solid var(--border-soft)}
+  .item:last-child{border-bottom:0}
+  .item .t{font-size:14.5px;line-height:1.5;margin:0 0 7px;font-weight:600;word-break:break-word}
+  .item .t a{color:var(--text)}
+  .item .t a:hover{color:var(--accent)}
+  .meta{display:flex;gap:9px;flex-wrap:wrap;align-items:center;font-size:12px;color:var(--faint)}
+  .src{font-weight:600;padding:1px 7px;border-radius:5px;font-size:11.5px}
+  .s-dmhy{background:#eef6ff;color:#0969da}
+  .s-mikan{background:#fdf0f7;color:#bf3989}
+  .s-acgrip{background:#effaf3;color:#1a7f37}
+  .s-nyaa{background:#f2f0ff;color:#6639ba}
+  .s-bangumi{background:#fff6e5;color:#9a6700}
+  .acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:9px}
+  .acts a{
+    font-size:12.5px;padding:5px 11px;border-radius:7px;border:1px solid var(--border);
+    background:#f6f8fa;color:var(--text);
+  }
+  .acts a:hover{background:#eef1f4;text-decoration:none}
+  .acts a.mag{background:var(--accent-soft);border-color:#b6e3ff;color:var(--accent);font-weight:600}
+  .acts a.mag:hover{background:#cceeff}
+  details{margin-top:9px}
+  summary{cursor:pointer;color:var(--faint);font-size:12px;list-style:none}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"▸ ";font-size:10px}
+  details[open] summary::before{content:"▾ "}
+  details ul{margin:7px 0 0;padding-left:19px;font-size:12.5px;color:var(--muted)}
+  details li{margin:3px 0;word-break:break-all}
+  details p.sm{margin:7px 0 0;font-size:12.5px;color:var(--muted);white-space:pre-wrap}
+  footer{margin-top:26px;color:var(--faint);font-size:12.5px;line-height:1.8}
+  .empty{color:var(--faint);font-size:13px;padding:16px 0}
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0d1117; --card:#161b22; --border:#30363d; --border-soft:#21262d;
+      --text:#e6edf3; --muted:#9198a1; --faint:#7d8590;
+      --accent:#4493f8; --accent-soft:#0c2d6b; --accent-line:#1f6feb;
+      --ok:#3fb950; --ok-soft:#12261e; --bad:#f85149; --bad-soft:#2d1214;
+    }
+    button{background:#21262d}
+    button:hover{background:#30363d}
+    .sub input:focus,.toolbar input:focus{background:#0d1117}
+    .acts a{background:#21262d}
+    .acts a:hover{background:#30363d}
+    .s-dmhy{background:#0c2d6b;color:#79c0ff}
+    .s-mikan{background:#3d1b2e;color:#ff9bce}
+    .s-acgrip{background:#12261e;color:#56d364}
+    .s-nyaa{background:#26203d;color:#b392f0}
+    .s-bangumi{background:#3a2d00;color:#e3b341}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>动漫资源 · 增强订阅</h1>
+    <p>聚合动漫花园 / 蜜柑计划 / ACG.RIP / Nyaa / 萌番组，统一清洗成干净 RSS，每条自带磁力链接、种子直链、帖子页与正文外链。</p>
+    <div class="badges" id="statusBadges"></div>
+  </header>
+
+  <div class="card">
+    <h2>订阅地址</h2>
+    <div class="sub">
+      <input id="feedUrl" readonly value="加载中…">
+      <button class="primary" id="copyBtn">复制</button>
+      <button id="openBtn">预览 XML</button>
+    </div>
+    <p class="hint">丢进任意 RSS 阅读器（Feedly、Inoreader、NetNewsWire、RSSHub 客户端等）即可。这是一个静态文件，每 20 分钟自动重建一次。</p>
+  </div>
+
+  <div class="card">
+    <h2>可用的订阅源</h2>
+    <table>
+      <thead><tr><th>频道</th><th>内容</th><th class="n">条数</th></tr></thead>
+      <tbody id="feedRows"><tr><td colspan="3" class="empty">加载中…</td></tr></tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>最新更新</h2>
+    <div class="toolbar">
+      <input id="q" placeholder="筛选当前列表：番剧名、字幕组、画质…">
+      <span class="count" id="count"></span>
+    </div>
+    <div id="items"><p class="empty">加载中…</p></div>
+    <div style="text-align:center;margin-top:16px">
+      <button id="more" style="display:none">显示更多</button>
+    </div>
+  </div>
+
+  <footer id="foot"></footer>
+</div>
+
+<script>
+const SRC_LABEL = {dmhy:"动漫花园", mikan:"蜜柑计划", acgrip:"ACG.RIP", nyaa:"Nyaa", bangumi:"萌番组"};
+const PAGE = 40;
+let DATA = null, shown = PAGE, filter = "";
+
+const $ = s => document.querySelector(s);
+const abs = p => new URL(p, location.href).href;
+
+function esc(s){
+  return String(s == null ? "" : s).replace(/[&<>"']/g, c =>
+    ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+function fmtDate(s){
+  if (!s) return "";
+  const d = new Date(s);
+  if (isNaN(d)) return s.slice(0, 22);
+  const p = n => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
+function renderStatus(d){
+  const okSites = (d.sources || []).filter(s => s.ok).length;
+  const total = (d.sources || []).length;
+  const bits = [];
+  bits.push(`<span class="badge ${okSites === total ? "ok" : "bad"}">${okSites}/${total} 个源正常</span>`);
+  bits.push(`<span class="badge">共 ${d.count} 条</span>`);
+  bits.push(`<span class="badge">更新于 ${esc(d.builtAtUtc || d.builtAt)}</span>`);
+  (d.sources || []).forEach(s => {
+    bits.push(`<span class="badge ${s.ok ? "" : "bad"}">${esc(s.name)} ${s.count}</span>`);
+  });
+  if ((d.errors || []).length) bits.push(`<span class="badge bad">${d.errors.length} 个源失败</span>`);
+  $("#statusBadges").innerHTML = bits.join("");
+}
+
+function renderFeeds(d){
+  const rows = [];
+  const main = (d.feeds || []).find(f => f.primary) || (d.feeds || [])[0];
+  if (main) {
+    rows.push(`<tr><td><b>全部更新</b> <span class="badge ok">推荐</span></td>
+      <td><a href="./feed.xml">feed.xml</a></td><td class="n">${main.count}</td></tr>`);
+  }
+  (d.feeds || []).forEach(f => {
+    if (main && f.id === main.id) return;
+    rows.push(`<tr><td>${esc(f.title)}</td>
+      <td><a href="./${esc(f.file)}">${esc(f.file)}</a></td>
+      <td class="n">${f.count}</td></tr>`);
+  });
+  (d.sources || []).forEach(s => {
+    rows.push(`<tr><td>只看 ${esc(s.name)}</td>
+      <td><a href="./${esc(s.id)}.xml">${esc(s.id)}.xml</a></td>
+      <td class="n">${s.count}</td></tr>`);
+  });
+  $("#feedRows").innerHTML = rows.join("") || `<tr><td colspan="3" class="empty">暂无</td></tr>`;
+}
+
+function itemHtml(it){
+  const cls = "s-" + (SRC_LABEL[it.source] ? it.source : "dmhy");
+  const name = it.sourceName || SRC_LABEL[it.source] || it.source;
+  const meta = [`<span class="src ${cls}">${esc(name)}</span>`];
+  if (it.category) meta.push(esc(it.category));
+  if (it.pubdate) meta.push(fmtDate(it.pubdate));
+  if (it.size) meta.push(esc(it.size));
+  if (it.seeders != null) meta.push(`做种 ${it.seeders}`);
+
+  const acts = [];
+  if (it.magnet) acts.push(`<a class="mag" href="${esc(it.magnet)}">磁力链接</a>`);
+  if (it.torrent) acts.push(`<a href="${esc(it.torrent)}">下载 .torrent</a>`);
+  if (it.link) acts.push(`<a href="${esc(it.link)}">帖子页</a>`);
+  const btih = it.infohash ? `<span title="${esc(it.infohash)}">btih ${esc(it.infohash.slice(0, 8))}</span>` : "";
+
+  let extra = "";
+  const ds = [];
+  if ((it.links || []).length) {
+    ds.push(`<details><summary>正文链接 · ${it.links.length}</summary><ul>${
+      it.links.map(u => `<li><a href="${esc(u)}">${esc(u.replace(/^https?:\/\//, ""))}</a></li>`).join("")
+    }</ul></details>`);
+  }
+  if (it.summary) {
+    ds.push(`<details><summary>正文摘要</summary><p class="sm">${esc(it.summary)}</p></details>`);
+  }
+  extra = ds.join("");
+
+  return `<div class="item">
+    <p class="t"><a href="${esc(it.link || it.magnet || "#")}">${esc(it.title)}</a></p>
+    <div class="meta">${meta.join('<span style="color:#d0d7de">·</span>')} ${btih}</div>
+    <div class="acts">${acts.join("")}</div>
+    ${extra}
+  </div>`;
+}
+
+function renderItems(){
+  if (!DATA) return;
+  const all = DATA.items || [];
+  const q = filter.trim().toLowerCase();
+  const list = q ? all.filter(it => (it.title || "").toLowerCase().includes(q)) : all;
+  const slice = list.slice(0, shown);
+  $("#count").textContent = q
+    ? `匹配 ${list.length} / ${all.length} 条`
+    : `显示 ${slice.length} / ${all.length} 条`;
+  $("#items").innerHTML = slice.length
+    ? slice.map(itemHtml).join("")
+    : `<p class="empty">没有匹配的条目</p>`;
+  $("#more").style.display = list.length > shown ? "inline-block" : "none";
+}
+
+function init(){
+  fetch("./feed.json", {cache:"no-store"})
+    .then(r => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+    .then(d => {
+      DATA = d;
+      const mainUrl = abs("feed.xml");
+      $("#feedUrl").value = mainUrl;
+      $("#openBtn").onclick = () => window.open(mainUrl, "_blank");
+      renderStatus(d);
+      renderFeeds(d);
+      renderItems();
+      $("#foot").innerHTML =
+        `最近构建：${esc(d.builtAt)}（北京时间）<br>` +
+        `数据来自 ${(d.sources || []).map(s => esc(s.name)).join(" / ")}，由 GitHub Actions 定时抓取并生成静态文件。` +
+        ((d.errors || []).length ? `<br>本次失败的源：${esc(d.errors.join("；"))}` : "");
+    })
+    .catch(e => {
+      $("#items").innerHTML = `<p class="empty">数据加载失败：${esc(e.message)}</p>`;
+      $("#feedRows").innerHTML = `<tr><td colspan="3" class="empty">数据加载失败</td></tr>`;
+    });
+
+  $("#copyBtn").onclick = async () => {
+    const v = $("#feedUrl").value;
+    const btn = $("#copyBtn");
+    try {
+      await navigator.clipboard.writeText(v);
+    } catch (e) {
+      const i = $("#feedUrl"); i.select(); document.execCommand("copy");
+    }
+    btn.textContent = "已复制";
+    btn.classList.add("copied");
+    setTimeout(() => { btn.textContent = "复制"; btn.classList.remove("copied"); }, 1600);
+  };
+
+  let timer = null;
+  $("#q").oninput = e => {
+    clearTimeout(timer);
+    timer = setTimeout(() => { filter = e.target.value; shown = PAGE; renderItems(); }, 160);
+  };
+  $("#more").onclick = () => { shown += PAGE * 2; renderItems(); };
+}
+init();
+</script>
+</body>
+</html>

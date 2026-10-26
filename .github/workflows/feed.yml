@@ -1,0 +1,58 @@
+name: 更新资源订阅
+
+on:
+  schedule:
+    # 每 20 分钟一次。GitHub 的定时任务在高峰期可能延迟几分钟，属正常现象。
+    - cron: "*/20 * * * *"
+  workflow_dispatch:            # 支持在 Actions 页面手动点一次
+  push:
+    branches: [main]
+
+permissions:
+  contents: read                # 只读仓库，不需要提交
+  pages: write                  # 允许发布到 Pages
+  id-token: write               # Pages 部署需要
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: 检出仓库
+        uses: actions/checkout@v4
+
+      - name: 准备 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 启用并读取 Pages 配置
+        id: pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true        # 自动把 Pages 的 Source 设为 GitHub Actions，省掉手动设置
+
+      - name: 抓取并生成订阅
+        env:
+          SITE_URL: ${{ steps.pages.outputs.base_url }}
+        run: python build_feed.py
+
+      - name: 打包站点文件
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: 发布到 GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

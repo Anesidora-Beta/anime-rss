@@ -1,0 +1,23 @@
+{
+  "_说明": "改完提交到 GitHub 即可，下一次构建会自动生成对应的 xml。字段：id（文件名）、title（频道名）、primary（是否作为 /feed.xml）、src（限定站点）、keyword/include/exclude/cat、limit。",
+  "feeds": [
+    {
+      "id": "all",
+      "title": "动漫资源 · 全部更新",
+      "primary": true,
+      "limit": 200
+    },
+    {
+      "id": "1080p",
+      "title": "1080p 合集",
+      "include": ["1080p"],
+      "limit": 150
+    },
+    {
+      "id": "magnet",
+      "title": "只带磁力的站",
+      "src": ["dmhy", "nyaa", "bangumi"],
+      "limit": 150
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+__pycache__/
+*.py[cod]
+*.log
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# 构建产物由 GitHub Actions 生成并直接发布，不进仓库
+docs/
