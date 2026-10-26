@@ -8,7 +8,8 @@
 支持多源合并、跨站去重、关键词与标签过滤。
 
 用法:
-    python server.py                # 默认 0.0.0.0:8899
+    python server.py                # 默认只监听本机 127.0.0.1:8899
+    HOST=lan python server.py       # 监听全部网卡，同 WiFi 的设备可访问
     PORT=9000 python server.py
 
 订阅:
@@ -65,7 +66,19 @@ except Exception:
 
 CACHE_TTL = int(os.environ.get("CACHE_TTL", "300"))
 PORT = int(os.environ.get("PORT", "8899"))
-HOST = os.environ.get("HOST", "0.0.0.0")
+
+# 监听范围：默认只给本机用。手机/平板要在同一 WiFi 下订阅，才用 HOST=lan 打开。
+# lan / all / any / * / 0.0.0.0 / :: 都等价于「监听全部网卡」。
+_WILDCARD_HOSTS = {"lan", "all", "any", "*", "0.0.0.0", "::"}
+
+
+def _resolve_host(raw):
+    v = (raw or "").strip().lower()
+    return "0.0.0.0" if v in _WILDCARD_HOSTS else v
+
+
+HOST = _resolve_host(os.environ.get("HOST", "127.0.0.1"))
+LAN_OPEN = HOST == "0.0.0.0"
 SITE_TITLE = "动漫资源 · 增强订阅"
 MAX_MERGE = 800  # 合并后参与排序的上限, 防止多源过大
 
@@ -596,7 +609,7 @@ class Handler(BaseHTTPRequestHandler):
         if path in ("/", "/index.html"):
             page = (
                 INDEX_HTML
-                .replace("__LAN_RSS__", f"http://{local_ip()}:{PORT}/rss.xml")
+                .replace("__LAN_LINE__", lan_line())
                 .replace("__SOURCES__", build_source_meta())
             )
             return self._send(page, "text/html; charset=utf-8")
@@ -676,6 +689,15 @@ def local_ip():
         return "127.0.0.1"
 
 
+def lan_line():
+    """面板上「手机 / 平板」那一行：开了局域网才给地址，否则给开启方法。"""
+    if LAN_OPEN:
+        return (f'手机 / 平板（同一 WiFi）：'
+                f'<code>http://{local_ip()}:{PORT}/rss.xml</code>')
+    return ('手机 / 平板（同一 WiFi）：当前只监听本机，其它设备访问不到。'
+            '需要时执行 <code>set HOST=lan</code> 后重启服务。')
+
+
 def load_index():
     global INDEX_HTML
     here = os.path.dirname(os.path.abspath(__file__))
@@ -689,17 +711,27 @@ def load_index():
 
 def main():
     load_index()
-    srv = ThreadingHTTPServer((HOST, PORT), Handler)
+    try:
+        srv = ThreadingHTTPServer((HOST, PORT), Handler)
+    except OSError as e:
+        print(f"启动失败：{HOST}:{PORT} 无法监听（{e}）")
+        print(f"端口可能已被占用，换一个：set PORT=9000")
+        return 1
     print("多站资源 RSS 增强订阅服务已启动")
-    print(f"  本机:   http://127.0.0.1:{PORT}/")
-    print(f"  局域网: http://{local_ip()}:{PORT}/")
-    print(f"  订阅源: http://127.0.0.1:{PORT}/rss.xml")
+    print(f"  本机:   http://localhost:{PORT}/")
+    print(f"  订阅源: http://localhost:{PORT}/rss.xml")
+    if LAN_OPEN:
+        print(f"  局域网: http://{local_ip()}:{PORT}/  （同 WiFi 的设备可访问）")
+    else:
+        print("  局域网: 已关闭，只监听本机")
+        print("          手机 / 平板要订阅：先 set HOST=lan 再启动，或运行 启动.bat lan")
     print(f"  站点:   {' / '.join(s['name'] for s in S.SOURCES)}")
     try:
         srv.serve_forever()
     except KeyboardInterrupt:
         print("\n已停止")
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
