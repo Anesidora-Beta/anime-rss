@@ -46,6 +46,21 @@ jobs:
             echo "url=https://$owner.github.io/$repo" >> "$GITHUB_OUTPUT"
           fi
 
+      # 生成物不进仓库，所以 Actions 每次都是全新环境。
+      # 这里把上一次发布到 Pages 的 feed.json 取回来，build_feed.py 才有历史可合并，
+      # 某个源临时失败时它的条目才会保留（最多 RETENTION_DAYS 天），不会突然掉空。
+      - name: 取回上一轮条目（滚动保留用）
+        run: |
+          mkdir -p docs
+          if curl -fsS --max-time 30 -A "anime-rss-build/1.0" \
+               "${{ steps.site.outputs.url }}/feed.json" -o docs/feed.json.tmp; then
+            mv docs/feed.json.tmp docs/feed.json
+            echo "已取回历史条目"
+          else
+            rm -f docs/feed.json.tmp
+            echo "无历史数据（首次运行或站点尚未发布），按全新构建处理"
+          fi
+
       - name: 抓取并生成订阅
         env:
           SITE_URL: ${{ steps.site.outputs.url }}
