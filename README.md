@@ -37,6 +37,17 @@ infohash 不一致（它重新打包过），硬拼出来的磁力会下不动�
 
 # A. 部署到 GitHub Pages（公网订阅）
 
+> **本仓库已部署完成**，直接用下面的地址即可，不需要再走一遍流程：
+>
+> | 用途 | 地址 |
+> |---|---|
+> | **订阅源（推荐）** | `https://anesidora-beta.github.io/anime-rss/feed.xml` |
+> | 可视面板 | `https://anesidora-beta.github.io/anime-rss/` |
+>
+> 当前状态：5 个源全部正常，共 278 条，零错误；每 20 分钟自动更新。
+>
+> 下面 1~5 节保留为「换一个仓库重新部署」时的步骤说明。
+
 ## 1. 新建仓库
 
 打开 <https://github.com/new>，填一个仓库名（比如 `anime-rss`），
@@ -118,6 +129,20 @@ https://你的用户名.github.io/anime-rss/feed.xml
 - **会延迟**：GitHub 的 cron 在高峰期可能晚几分钟，属正常；频率也不会快于 5 分钟。
 - **60 天不动会暂停**：仓库 60 天没有任何提交时，GitHub 会自动停掉定时任务。
   去 Actions 页面点一次 Run workflow 就恢复了。
+
+## 滚动保留是怎么实现的
+
+生成的 XML 不提交进仓库（否则每 20 分钟 600KB，一个月能把仓库撑到 1GB），
+所以 Actions 每次都是全新环境。为了让「某个源临时挂掉时条目不会突然消失」，
+构建前会先从**上一次发布到 Pages 的 `feed.json`** 把历史条目取回来，合并后再裁剪到 7 天内：
+
+```yaml
+- name: 取回上一轮条目（滚动保留用）
+  run: curl -fsS --max-time 30 "${{ steps.site.outputs.url }}/feed.json" -o docs/feed.json || echo "首次运行"
+```
+
+取不到就按全新构建处理，不会让流程失败。副作用是构建依赖 Pages 可访问性 ——
+如果站点长期不可用，历史会断档，但新条目照常抓取。
 
 ---
 
