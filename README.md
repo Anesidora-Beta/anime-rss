@@ -235,17 +235,20 @@ http://127.0.0.1:8899/rss.xml?include=LoliHouse,1080p&exclude=繁体&limit=30
 
 ## 自检脚本
 
-仓库里带了三个测试，改完代码跑一遍能快速发现回归：
+仓库里带了四个测试，改完代码跑一遍能快速发现回归：
 
 ```bash
 python test_magnet.py                 # 磁力规整的单元测试（离线，11 项）
 python remote_test.py --rounds 3      # 线上可用性/结构/内容/一致性/稳定性（48 项）
+python monitor_test.py --rounds 9     # 长周期采样，观察跨定时任务边界是否中断
 python compat_test.py                 # 用 feedparser 模拟真实阅读器解析（需 pip install feedparser）
 ```
 
 `remote_test.py` 侧重的是一旦发布出去会不会坏：状态码、字段完整性、时间排序、
 频道间数据一致性、条件请求 304、定时任务是否在跑。`compat_test.py` 验证的是
-「阅读器眼里的样子」——XML 合法不代表客户端能正确解读。
+「阅读器眼里的样子」——XML 合法不代表客户端能正确解读。`monitor_test.py` 按固定
+间隔采样若干分钟，重点看重新部署的那一瞬间有没有出现 404、XML 和 JSON 会不会
+版本错位。
 
 ## 推荐订阅方式
 
