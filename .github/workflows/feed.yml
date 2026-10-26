@@ -36,8 +36,10 @@ jobs:
       - name: 计算站点地址
         id: site
         run: |
-          owner="${GITHUB_REPOSITORY%%/*}"
-          repo="${GITHUB_REPOSITORY##*/}"
+          # GITHUB_REPOSITORY 会保留原始大小写（如 Anesidora-Beta/anime-rss），
+          # 而 Pages 域名一律是小写，这里必须转换，否则 RSS 的 self 链接不规范。
+          owner=$(printf '%s' "${GITHUB_REPOSITORY%%/*}" | tr '[:upper:]' '[:lower:]')
+          repo=$(printf '%s' "${GITHUB_REPOSITORY##*/}" | tr '[:upper:]' '[:lower:]')
           if [ "$repo" = "$owner.github.io" ]; then
             echo "url=https://$owner.github.io" >> "$GITHUB_OUTPUT"
           else

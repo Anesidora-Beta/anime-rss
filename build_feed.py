@@ -24,6 +24,7 @@ import os
 import shutil
 import sys
 import time
+import urllib.parse
 
 import server as core
 import sources as S
@@ -167,7 +168,12 @@ def main():
     args = ap.parse_args()
 
     out = args.out
+    # 域名统一小写：GitHub 的 GITHUB_REPOSITORY 保留原始大小写，
+    # 但 Pages 实际域名是全小写，少数严格的阅读器会因为大小写不一致拒绝。
     site = (args.site or "").rstrip("/")
+    if site:
+        _p = urllib.parse.urlsplit(site)
+        site = urllib.parse.urlunsplit((_p.scheme.lower(), _p.netloc.lower(), _p.path, "", ""))
     os.makedirs(out, exist_ok=True)
 
     t0 = time.time()
