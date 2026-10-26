@@ -134,19 +134,38 @@ def extract_links(desc_html):
     return out[:12]
 
 
-def slim_magnet(url, keep_tr=3):
-    """磁力瘦身: 保留 btih + dn + 前几个 tracker"""
+def slim_magnet(url, title="", keep_tr=3):
+    """磁力规整：btih 统一成 40 位 hex、补上显示名称、只留前几个 tracker。
+
+    源站给的磁力有两个毛病，直接转发会明显影响可用性：
+      1. 动漫花园用 base32 编码 btih（32 位），部分下载器只认 hex，统一转换；
+      2. dn 参数经常缺失或为空串，下载器里就只剩一串哈希，看不出是什么番。
+         用条目标题补上（urlencode，标题里的 & 和 # 不会破坏结构）。
+    """
     if not url or not url.startswith("magnet:"):
         return url or ""
-    keep, tr = [], 0
-    for p in url.split("&"):
-        if p.startswith(("magnet:?xt=", "xt=")) or p.startswith("dn="):
-            keep.append(p)
-        elif p.startswith("tr="):
-            tr += 1
-            if tr <= keep_tr:
-                keep.append(p)
-    return "&".join(keep)
+    m = re.search(r"btih:([0-9a-zA-Z]{32,40})", url, flags=re.I)
+    if not m:
+        return url
+    ih = S.norm_infohash(m.group(1))
+    if not ih or len(ih) != 40:
+        return url
+
+    dn = ""
+    dm = re.search(r"[&?]dn=([^&]*)", url)
+    if dm:
+        dn = urllib.parse.unquote(dm.group(1)).strip()
+    if not dn and title:
+        dn = title.strip()
+
+    parts = [f"magnet:?xt=urn:btih:{ih}"]
+    if dn:
+        parts.append("dn=" + urllib.parse.quote(dn, safe=""))
+    for i, t in enumerate(re.findall(r"[&?]tr=([^&]*)", url)):
+        if i >= keep_tr:
+            break
+        parts.append("tr=" + t)
+    return "&".join(parts)
 
 
 def pretty_time(pubdate):
@@ -197,7 +216,7 @@ def normalize(items):
         html_src = it.get("desc_html") or ""
         it["links"] = extract_links(html_src)
         it["summary"] = clean_text(html_src, 420)
-        it["magnet"] = slim_magnet(it.get("magnet") or "")
+        it["magnet"] = slim_magnet(it.get("magnet") or "", it.get("title") or "")
         if not it.get("infohash") and it["magnet"]:
             it["infohash"] = S.infohash_of(it["magnet"])
     return items
@@ -331,7 +350,7 @@ def build_description(it):
     """渲染成"链接清单"式 HTML"""
     esc = html.escape
     src = S.BY_ID.get(it["source"], {"name": it["source"]})
-    magnet = slim_magnet(it["magnet"])
+    magnet = slim_magnet(it["magnet"], it.get("title") or "")
     torrent = it["torrent"]
     page = it["link"]
     links = it["links"]
@@ -573,7 +592,7 @@ class Handler(BaseHTTPRequestHandler):
                     "sourceName": S.BY_ID.get(it["source"], {}).get("name", it["source"]),
                     "title": it["title"],
                     "link": it["link"],
-                    "magnet": slim_magnet(it["magnet"]),
+                    "magnet": slim_magnet(it["magnet"], it.get("title") or ""),
                     "torrent": it["torrent"],
                     "size": it["size"],
                     "seeders": it["seeders"],

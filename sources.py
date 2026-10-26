@@ -123,6 +123,13 @@ def item(source, title, link, auto_magnet=True, **kw):
 
 DMHY_BASE = "https://share.dmhy.org"
 
+# 动漫花园全站 RSS 的分类实测分布（500 条）：
+#   動畫 364 / 日劇 49 / 季度全集 39 / 音樂 27 / 特攝 8 / 其他 7 /
+#   ＲＡＷ 3 / 動漫音樂 2 / 電腦遊戲 1
+# 订阅「动漫资源」时只保留下面三类；其余属噪音（有声书就落在「其他」）。
+# 想放宽：dmhy_cat=動畫,季度全集,特攝  或 dmhy_all=1 拿全站。
+DMHY_ANIME_CATS = {"動畫", "季度全集", "ＲＡＷ"}
+
 
 def url_dmhy(p):
     kw = (p.get("keyword") or "").strip()
@@ -141,9 +148,25 @@ def url_dmhy(p):
 
 
 def parse_dmhy(raw, p):
+    # 动漫花园的 RSS 是全站流，实测 500 条里混着 日劇 49、音樂 27、其他 7
+    # （例如 Japanese Audiobooks Archive 这类有声书）、電腦遊戲 1 等非动漫内容。
+    # 默认只保留动漫分类；需要全量时传 dmhy_all=1，也可用 dmhy_cat=動畫,特攝 自选。
+    if str(p.get("dmhy_all") or "") in ("1", "true", "yes"):
+        allow = None
+    elif (p.get("dmhy_cat") or "").strip():
+        allow = {x.strip() for x in p["dmhy_cat"].split(",") if x.strip()}
+    elif (p.get("cat") or "").strip():
+        allow = None          # 调用方已显式指定分类，交给上层过滤
+    else:
+        allow = DMHY_ANIME_CATS
+
     ch = ET.fromstring(raw).find("channel")
     out = []
     for it in ch.findall("item"):
+        cat = (it.findtext("category") or "").strip()
+        # 分类为空的条目保守保留，避免因字段缺失误删
+        if allow is not None and cat and cat not in allow:
+            continue
         enc = it.find("enclosure")
         mag = (enc.get("url") or "") if enc is not None else ""
         out.append(
@@ -154,7 +177,7 @@ def parse_dmhy(raw, p):
                 magnet=mag,
                 infohash=infohash_of(mag),
                 pubdate=(it.findtext("pubDate") or "").strip(),
-                category=(it.findtext("category") or "").strip(),
+                category=cat,
                 author=(it.findtext("author") or "").strip(),
                 desc_html=it.findtext("description") or "",
             )
