@@ -55,19 +55,23 @@ git push -u origin main
 仓库已经在本地初始化并提交好了，上面两条就能推上去。第一次会要求登录：
 用浏览器授权，或者填一个 [Personal Access Token](https://github.com/settings/tokens) 当密码。
 
-## 3. 等待自动发布
+## 3. 打开 Pages（只需一次）
 
-推送动作本身就会触发一次构建（`.github/workflows/feed.yml` 里配了 `on: push`），
-工作流会自动把 Pages 的 Source 设为 GitHub Actions 并发布，**不需要手动设置**。
-去仓库的 **Actions** 页面能看到进度，整个流程约 1 分钟。
+仓库页面 → **Settings** → 左侧 **Pages** → **Build and deployment** →
+**Source 选 `GitHub Actions`**（不要选 Deploy from a branch）。
 
-如果「启用并读取 Pages 配置」那一步报错（少数组织策略会禁），手动补一下：
-**Settings** → **Pages** → **Source 选 `GitHub Actions`**，然后 Actions 页面点
-**Run workflow** 重跑一次。
+这一步没法省略：创建 Pages 站点需要仓库管理员权限，而工作流用的 `GITHUB_TOKEN`
+拿不到这个权限（实测报 `Resource not accessible by integration`），所以由本人点一次。
+开好之后工作流就能一直自动发布，不用再管。
 
-之后每 20 分钟自动更新，不用再管。
+## 4. 手动跑一次
 
-## 4. 订阅地址
+如果推送时工作流已经因为 Pages 没开而失败过，去 **Actions** → 左侧「更新资源订阅」→
+右上 **Run workflow** → 绿色按钮重跑一次（不重跑的话，最多等 20 分钟下一次定时任务也会补上）。
+
+等 1 分钟左右跑完，页面上会显示订阅地址。之后每 20 分钟自动更新。
+
+## 5. 订阅地址
 
 ```
 https://你的用户名.github.io/anime-rss/feed.xml

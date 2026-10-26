@@ -11,7 +11,7 @@ on:
 permissions:
   contents: read                # 只读仓库，不需要提交
   pages: write                  # 允许发布到 Pages
-  id-token: write               # Pages 部署需要
+  id-token: write               # Pages 部署需要 OIDC
 
 concurrency:
   group: pages
@@ -30,15 +30,23 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: 启用并读取 Pages 配置
-        id: pages
-        uses: actions/configure-pages@v5
-        with:
-          enablement: true        # 自动把 Pages 的 Source 设为 GitHub Actions，省掉手动设置
+      # 不启用 configure-pages 的自动开启功能：创建 Pages 站点需要仓库管理员权限，
+      # GITHUB_TOKEN 拿不到，会报 Resource not accessible by integration。
+      # 站点只需在 Settings → Pages 里手动开一次，之后这里就能正常部署。
+      - name: 计算站点地址
+        id: site
+        run: |
+          owner="${GITHUB_REPOSITORY%%/*}"
+          repo="${GITHUB_REPOSITORY##*/}"
+          if [ "$repo" = "$owner.github.io" ]; then
+            echo "url=https://$owner.github.io" >> "$GITHUB_OUTPUT"
+          else
+            echo "url=https://$owner.github.io/$repo" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: 抓取并生成订阅
         env:
-          SITE_URL: ${{ steps.pages.outputs.base_url }}
+          SITE_URL: ${{ steps.site.outputs.url }}
         run: python build_feed.py
 
       - name: 打包站点文件
